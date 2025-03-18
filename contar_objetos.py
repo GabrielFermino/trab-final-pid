@@ -1,77 +1,121 @@
-from PIL import Image
+from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
+import numpy as np
+
+def find_objects(labeled_array):
+    objetos = []
+    labels = set()
+    linhas, colunas = len(labeled_array), len(labeled_array[0])
+    
+    for i in range(linhas):
+        for j in range(colunas):
+            if labeled_array[i][j] != 0:
+                labels.add(labeled_array[i][j])
+    
+    for label in labels:
+        x_min, x_max, y_min, y_max = colunas, 0, linhas, 0
+        
+        for i in range(linhas):
+            for j in range(colunas):
+                if labeled_array[i][j] == label:
+                    x_min = min(x_min, j)
+                    x_max = max(x_max, j)
+                    y_min = min(y_min, i)
+                    y_max = max(y_max, i)
+        
+        objetos.append((slice(y_min, y_max + 1), slice(x_min, x_max + 1)))
+    
+    return objetos
+
+def flood_fill(image, labeled_array, x, y, label):
+    stack = [(x, y)]
+    while stack:
+        i, j = stack.pop()
+        if 0 <= i < len(image) and 0 <= j < len(image[0]) and image[i][j] and labeled_array[i][j] == 0:
+            labeled_array[i][j] = label
+            stack.extend([(i-1, j), (i+1, j), (i, j-1), (i, j+1)])
 
 def all_contar_objetos(imagem):
-    def load_and_binarize(image_path, threshold=128):
-        img = Image.open(image_path).convert("L")  # Converte para escala de cinza
-        img = img.point(lambda p: 255 if p > threshold else 0)  # Binariza (0 = preto, 255 = branco)
-        return img
-
-    def count_objects_in_red_zones(binary_image, marked_image):
-        rows, cols = binary_image.size[1], binary_image.size[0]
-        object_count = 0  # Contador de objetos
-        visited = [[False for _ in range(cols)] for _ in range(rows)]  # Matriz de visitados
-
-        # Função para flood fill (preenchimento por inundação)
-        def flood_fill(x, y):
-            stack = [(x, y)]
-            while stack:
-                cx, cy = stack.pop()
-                if 0 <= cx < rows and 0 <= cy < cols:
-                    if not visited[cx][cy] and binary_image.getpixel((cy, cx)) == 255:
-                        visited[cx][cy] = True
-                        stack.extend([(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)])
-
-        # Percorre a imagem para contar objetos dentro das zonas vermelhas
-        for i in range(rows):
-            for j in range(cols):
-                # Verifica se o pixel é vermelho na imagem marcada
-                if marked_image.getpixel((j, i)) == (255, 0, 0):  # Vermelho
-                    # Verifica se há um objeto branco não visitado
-                    if binary_image.getpixel((j, i)) == 255 and not visited[i][j]:
-                        flood_fill(i, j)  # Marca todos os pixels do objeto
-                        object_count += 1  # Incrementa o contador de objetos
-
-        return object_count
-
+    def load_and_binarize(image_path, threshold=200):
+        img = Image.open(image_path).convert("L")
+        img = img.point(lambda p: 255 if p > threshold else 0)
+        return img.convert("RGB")
+    
+    def dilation(imagem, SE, centrox, centroy):
+        linhas = len(imagem)
+        colunas = len(imagem[0])
+        tam_SE = (len(SE), len(SE[0]))
+        
+        ImgDilat = np.zeros((linhas, colunas), dtype=int)
+        for x in range(linhas):
+            for y in range(colunas):
+                if imagem[x][y] == 1:
+                    for u in range(-centrox, tam_SE[0] - centrox):
+                        for v in range(-centroy, tam_SE[1] - centroy):
+                            if 0 <= x + u < linhas and 0 <= y + v < colunas:
+                                if SE[u + centrox][v + centroy] == 1:
+                                    ImgDilat[x + u][y + v] = 1
+        
+        return ImgDilat
+    
+    def erosion(imagem, SE, centrox, centroy):
+        linhas = len(imagem)
+        colunas = len(imagem[0])
+        ImgErode = np.copy(imagem)
+        for x in range(linhas):
+            for y in range(colunas):
+                if imagem[x][y] == 1:
+                    for u in range(-centrox, len(SE) - centrox):
+                        for v in range(-centroy, len(SE[0]) - centroy):
+                            if 0 <= x + u < linhas and 0 <= y + v < colunas:
+                                if SE[u + centrox][v + centroy] == 1 and imagem[x + u][y + v] == 0:
+                                    ImgErode[x][y] = 0
+                                    break
+        return ImgErode
+    
+    def count_objects_and_draw_boxes(binary_image):
+        img_array = np.array(binary_image.convert("L")) == 0
+        SE = np.ones((3, 3), dtype=int)  # Elemento estruturante menor para evitar conexões indesejadas
+        img_array = erosion(dilation(img_array, SE, 1, 1), SE, 1, 1)
+        
+        labeled_array = np.zeros_like(img_array, dtype=int)
+        label_counter = 1
+        for i in range(len(img_array)):
+            for j in range(len(img_array[0])):
+                if img_array[i][j] and labeled_array[i][j] == 0:
+                    flood_fill(img_array, labeled_array, i, j, label_counter)
+                    label_counter += 1
+        
+        objects_slices = find_objects(labeled_array)
+        
+        marked_image = binary_image.copy()
+        draw = ImageDraw.Draw(marked_image)
+        
+        for obj_slice in objects_slices:
+            if obj_slice:
+                y_slice, x_slice = obj_slice
+                x_min, x_max = x_slice.start, x_slice.stop
+                y_min, y_max = y_slice.start, y_slice.stop
+                draw.rectangle([x_min, y_min, x_max, y_max], outline=(255, 0, 0), width=2)
+        
+        return label_counter - 1, marked_image
+    
     image_path = f"./imagens/{imagem}"
-
-    # Carrega a imagem original e binariza
-    original_image = Image.open(image_path)
     binary_image = load_and_binarize(image_path)
-
-    # Cria uma cópia da imagem binarizada para marcar os pixels
-    marked_image = binary_image.convert("RGB")
-
-    # Percorre todos os pixels da imagem para pintar os vizinhos de vermelho
-    rows, cols = binary_image.size[1], binary_image.size[0]
-    for i in range(rows):
-        for j in range(cols):
-            if binary_image.getpixel((j, i)) == 255:  # Se o pixel for branco (objeto)
-                # Verifica os 4 vizinhos (cima, baixo, esquerda, direita)
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    nx, ny = i + dx, j + dy
-                    if 0 <= nx < rows and 0 <= ny < cols:  # Verifica se está dentro dos limites da imagem
-                        if binary_image.getpixel((ny, nx)) == 0:  # Se o vizinho for preto (fundo)
-                            marked_image.putpixel((ny, nx), (255, 0, 0))  # Pinta o vizinho de vermelho
-
-    # Conta os objetos dentro das zonas vermelhas
-    object_count = count_objects_in_red_zones(binary_image, marked_image)
-
-    # Exibe a imagem binarizada e a imagem com os vizinhos pintados
+    
+    object_count, final_image = count_objects_and_draw_boxes(binary_image)
+    
     plt.figure(figsize=(10, 5))
-
     plt.subplot(1, 2, 1)
-    plt.title("Imagem Binarizada (Preto e Branco)")
-    plt.imshow(binary_image, cmap="gray")
+    plt.title("Imagem Original")
+    plt.imshow(binary_image)
     plt.axis("off")
-
+    
     plt.subplot(1, 2, 2)
-    plt.title(f"Objetos Dentro das Linhas Vermelhas: {object_count}")
-    plt.imshow(marked_image)
+    plt.title(f"Objetos Detectados: {object_count}")
+    plt.imshow(final_image)
     plt.axis("off")
-
+    
     plt.show()
-
-# Exemplo de uso
-# all_contar_objetos("sua_imagem.jpg")
+    
+    return object_count

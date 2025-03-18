@@ -7,7 +7,7 @@ import intensidade
 import marr_hildreth
 import otsu
 import watershed
-from Operacoes import *
+import Operacoes
 
 def listar_imagens(diretorio="imagens"):
     """Lista todas as imagens no diretório especificado."""
@@ -58,19 +58,19 @@ def main():
     if not imagens:
         print("\nNenhuma imagem encontrada no diretório 'imagens/'.")
         return
-
-    # Escolha do método
-    escolha_metodo = escolher_metodo(metodos)
-    if escolha_metodo not in metodos:
-        print("\nOpção inválida. Tente novamente.")
-        return
-
+    
     # Escolha da imagem
     escolha_img = escolher_imagem(imagens)
     if not escolha_img.isdigit() or int(escolha_img) not in range(1, len(imagens) + 1):
         print("\nOpção inválida. Tente novamente.")
         return
 
+    # Escolha do método
+    escolha_metodo = escolher_metodo(metodos)
+    if escolha_metodo not in metodos:
+        print("\nOpção inválida. Tente novamente.")
+        return
+    
     # Executa o método escolhido na imagem selecionada
     imagem_escolhida = f"{imagens[int(escolha_img) - 1]}"
     funcao = metodos[escolha_metodo][1]
@@ -82,7 +82,6 @@ if __name__ == '__main__':
         main()
         continuar = input("\nDeseja continuar? (s/n): ")
         if continuar.lower() != "s":
-            print("\nObrigado por usar o programa. Até logo!")
             break
         else:
             os.system('cls' if os.name == 'nt' else 'clear')  # Limpa o console
