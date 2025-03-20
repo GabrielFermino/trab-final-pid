@@ -2,10 +2,11 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
-def all_intensidade(imagem):
-    def segment_image(image_path, output_path="./resultados/intensidade_modificada.jpg"):
-        img = Image.open(image_path).convert("L")
-        img_array = np.array(img)
+def intensidade(imagem):
+    def segment_image(imagem, output_path="./resultados/intensidade_modificada.jpg"):
+        img = imagem
+        grayscale_img = img.convert("L")
+        img_array = np.array(grayscale_img)
 
         # Aplicar segmentação de intensidade
         segmented_array = np.select(
@@ -36,5 +37,4 @@ def all_intensidade(imagem):
 
         plt.show()
 
-    image_path = f"./imagens/{imagem}"
-    segment_image(image_path)
+    segment_image(imagem)

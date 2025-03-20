@@ -1,23 +1,9 @@
-# Suavização com Gaussiana: Assim como no Marr-Hildreth, a imagem é suavizada para reduzir ruídos.
-# Cálculo do gradiente da imagem: Nesse caso utilizando derivada de Sobel
-# Supressão não-máxima: Apenas os pixels com maior intensidade ao longo da direção do gradiente são mantidos, tornando as bordas mais finas e precisas.
-# Limiarização dupla: Define dois limiares (alto e baixo)->
-# Bordas fortes (acima do limiar alto) são mantidas.
-# Bordas fracas (entre os limiares) são mantidas apenas se estiverem conectadas a bordas fortes.
-
-# Produz bordas finas e precisas.
-# Menos sensível a ruído devido à suavização inicial.
-
-# Mais complexo e computacionalmente mais caro que Marr-Hildreth.
-# Sensível à escolha dos limiares.
-
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageFilter
 
-def all_canny(imagem):
+def canny(imagem):
 
-    # Suavização com Gaussiana
     def gaussian_filter(image, size=5, sigma=1.0):
         kernel = np.fromfunction(lambda x, y: (1/(2*np.pi*sigma**2)) * 
                                 np.exp(-((x-(size//2))**2 + (y-(size//2))**2) / (2*sigma**2)), 
@@ -25,7 +11,6 @@ def all_canny(imagem):
         kernel /= np.sum(kernel)
         return image.filter(ImageFilter.Kernel((size, size), kernel.flatten(), scale=np.sum(kernel)))
 
-    # Cálculo do gradiente da imagem
     def sobel_gradients(image):
         sobel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
         sobel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -43,7 +28,6 @@ def all_canny(imagem):
         direction = np.arctan2(gy, gx)
         return magnitude, direction
 
-    # Supressão não-máxima
     def non_max_suppression(magnitude, direction):
         suppressed = np.zeros_like(magnitude)
         angle = direction * (180 / np.pi) % 180
@@ -65,7 +49,6 @@ def all_canny(imagem):
         
         return suppressed
 
-    # Limiarização dupla
     def double_threshold(image, low_threshold, high_threshold):
         strong = 255
         weak = 75
@@ -76,7 +59,6 @@ def all_canny(imagem):
         edges[weak_i, weak_j] = weak
         return edges
 
-    # Análise de conectividade
     def hysteresis(image):
         strong = 255
         weak = 75
@@ -93,7 +75,7 @@ def all_canny(imagem):
         return image
 
     def canny_edge_detection(image_path, Tl=50, Th=150):
-        image = Image.open(image_path).convert("L")
+        image = imagem
         smoothed = gaussian_filter(image)
         magnitude, direction = sobel_gradients(smoothed)
         suppressed = non_max_suppression(magnitude, direction)
@@ -104,7 +86,6 @@ def all_canny(imagem):
         result = Image.fromarray(final_edges)
         result.save("./resultados/canny_edges.jpg")
 
-        # Plotar imagens
         fig, ax = plt.subplots(1, 2, figsize=(12, 6))
         
         ax[0].imshow(image, cmap="gray")
@@ -117,5 +98,5 @@ def all_canny(imagem):
         
         plt.show()
 
-    image_path = f"./imagens/{imagem}"
-    canny_edge_detection(image_path)
+    image = imagem
+    canny_edge_detection(image)

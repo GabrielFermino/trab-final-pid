@@ -2,12 +2,12 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
-def all_cadeia_freeman(imagem):
+def cadeia_freeman(imagem):
 
     # Ler e converter para grayscale
-    def binarize_image(image_path, threshold=128):
-        img = Image.open(image_path).convert('L')
-        img_array = np.array(img)
+    def binarize_image(imagem, threshold=128):
+        grayscale_image = imagem.convert("L")
+        img_array = np.array(grayscale_image)
         binary_array = np.where(img_array > threshold, 255, 0)
         return binary_array.astype(np.uint8)
 
@@ -97,14 +97,13 @@ def all_cadeia_freeman(imagem):
 
         return chain_code, boundary_pixels
 
-    image_path = f"./imagens/{imagem}"
-    original_image = Image.open(image_path).convert('RGB')
-    binary_image = binarize_image(image_path)
+    original_image = imagem
+    binary_image = binarize_image(imagem)
     
     if binary_image is not None:
         chain_code, boundary_pixels = freeman_chain_code(binary_image)
         if chain_code:
-            print("Código de Freeman:", chain_code)
+
 
             plt.figure(figsize=(10, 5))
             plt.subplot(1, 2, 1)

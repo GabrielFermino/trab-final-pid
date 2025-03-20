@@ -3,16 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
-def all_watershed(imagem):
+def watershed(imagem):
     def load_image(image_path):
-        img = Image.open(image_path).convert("L")
+        img = imagem
         pixels = np.array(img, dtype=np.uint8)
         return pixels
 
     # Aplica binarização simples usando um limiar baseado na média
     def threshold_manual(image):
         threshold = 150
-        binary = np.where(image > threshold, 255, 0).astype(np.uint8)
+        grayscale = np.array(image.convert("L"))
+        binary = np.where(grayscale > threshold, 255, 0).astype(np.uint8)
         return binary
 
     # Aplica uma transformada de distância simples
@@ -78,8 +79,7 @@ def all_watershed(imagem):
         
         return image, segmented
 
-    image_path = f"./imagens/{imagem}"
-    image = load_image(image_path)
+    image = imagem
     original, segmented_image = watershed_algorithm(image)
 
     # Exibir as imagens lado a lado
@@ -93,7 +93,3 @@ def all_watershed(imagem):
     axes[1].axis("off")
 
     plt.show()
-
-    # Salvar a imagem segmentada
-    img = Image.fromarray(segmented_image)
-    img.save("./resultados/watershed.jpg")

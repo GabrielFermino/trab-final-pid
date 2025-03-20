@@ -12,7 +12,7 @@ from PIL import Image
 import scipy.ndimage
 import matplotlib.pyplot as plt
 
-def all_marr_hildreth(imagem):
+def marr_hildreth(imagem):
 
     # Suavização com Gaussiana
     def gaussian_kernel(size, sigma):
@@ -46,8 +46,8 @@ def all_marr_hildreth(imagem):
         
         return edges
 
-    def marr_hildreth_edge_detection(image_path, size=7, sigma=2.5):
-        image = Image.open(image_path).convert("L")
+    def marr_hildreth_edge_detection(image, size=7, sigma=2.5):
+        image = image.convert("L")
         image_array = np.array(image, dtype=np.float32)
         
         smoothed = apply_gaussian_filter(image_array, size, sigma)
@@ -60,7 +60,6 @@ def all_marr_hildreth(imagem):
         edges = detect_zero_crossings(log_image, threshold=15.0)
         
         result = Image.fromarray(edges)
-        result.save("./resultados/marr_hildreth_edges.jpg")
         
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
         axes[0].imshow(image, cmap="gray")
@@ -73,5 +72,5 @@ def all_marr_hildreth(imagem):
 
         plt.show()
 
-    image_path = f"./imagens/{imagem}"
-    marr_hildreth_edge_detection(image_path)
+    image = imagem
+    marr_hildreth_edge_detection(image)

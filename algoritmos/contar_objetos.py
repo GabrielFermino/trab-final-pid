@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
 import numpy as np
+from algoritmos.otsu import otsu
 
 def find_objects(labeled_array):
     objetos = []
@@ -35,11 +36,12 @@ def flood_fill(image, labeled_array, x, y, label):
             labeled_array[i][j] = label
             stack.extend([(i-1, j), (i+1, j), (i, j-1), (i, j+1)])
 
-def all_contar_objetos(imagem):
-    def load_and_binarize(image_path, threshold=200):
-        img = Image.open(image_path).convert("L")
-        img = img.point(lambda p: 255 if p > threshold else 0)
-        return img.convert("RGB")
+def contar_objetos(imagem):
+    def load_and_binarize(image):
+        segmentedImage, threshold = otsu(image)
+        return segmentedImage
+        # img = image.point(lambda p: 255 if p > threshold else 0)
+        # return segmentedImage.convert("L")
     
     def dilation(imagem, SE, centrox, centroy):
         linhas = len(imagem)
@@ -75,8 +77,15 @@ def all_contar_objetos(imagem):
     
     def count_objects_and_draw_boxes(binary_image):
         img_array = np.array(binary_image.convert("L")) == 0
-        SE = np.ones((3, 3), dtype=int)  # Elemento estruturante menor para evitar conexões indesejadas
-        img_array = erosion(dilation(img_array, SE, 1, 1), SE, 1, 1)
+        # SE = np.array([[0, 0, 1, 0, 0], 
+        #                [0, 1, 1, 1, 0], 
+        #                [1, 1, 1, 1, 1], 
+        #                [0, 1, 1, 1, 0], 
+        #                [0, 0, 1, 0, 0]])
+        SE = np.array( [[0, 1, 0],
+                        [1, 1, 1],
+                        [0, 1, 0]])
+        img_array = dilation(erosion(img_array, SE, 1, 1), SE, 1, 1)
         
         labeled_array = np.zeros_like(img_array, dtype=int)
         label_counter = 1
@@ -88,7 +97,7 @@ def all_contar_objetos(imagem):
         
         objects_slices = find_objects(labeled_array)
         
-        marked_image = binary_image.copy()
+        marked_image = Image.fromarray(np.uint8(img_array))
         draw = ImageDraw.Draw(marked_image)
         
         for obj_slice in objects_slices:
@@ -96,24 +105,24 @@ def all_contar_objetos(imagem):
                 y_slice, x_slice = obj_slice
                 x_min, x_max = x_slice.start, x_slice.stop
                 y_min, y_max = y_slice.start, y_slice.stop
-                draw.rectangle([x_min, y_min, x_max, y_max], outline=(255, 0, 0), width=2)
+                draw.rectangle([x_min, y_min, x_max, y_max], outline=(170), width=5)
         
         return label_counter - 1, marked_image
     
-    image_path = f"./imagens/{imagem}"
-    binary_image = load_and_binarize(image_path)
+    imagem = imagem
+    binary_image = load_and_binarize(imagem)
     
     object_count, final_image = count_objects_and_draw_boxes(binary_image)
     
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     plt.title("Imagem Original")
-    plt.imshow(binary_image)
+    plt.imshow(binary_image, cmap="gray")
     plt.axis("off")
     
     plt.subplot(1, 2, 2)
     plt.title(f"Objetos Detectados: {object_count}")
-    plt.imshow(final_image)
+    plt.imshow(final_image, cmap="gray")
     plt.axis("off")
     
     plt.show()

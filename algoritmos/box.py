@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from PIL import Image
 
-def all_box(imagem):
+def box(imagem):
     
     # Retorna a imagem em grayscale, sua largura e sua altura
     def read_image(filename):
-        img = Image.open(filename).convert("L")
+        img = filename.convert("L")
         width, height = img.size
         pixels = list(img.getdata())
         grayscale = [pixels[i * width:(i + 1) * width] for i in range(height)]
@@ -76,20 +76,15 @@ def all_box(imagem):
 
         plt.show()
     
-    # Carrega a imagem
-    image, width, height = read_image(f"./imagens/{imagem}")
+    # Carrega a imagem referente ao parâmetro
+    image, width, height = read_image(imagem)
+    
     
     # Aplica filtros para todos os casos
     filtered_2x2 = apply_box_filter(image, width, height, 2)
     filtered_3x3 = apply_box_filter(image, width, height, 3)
     filtered_5x5 = apply_box_filter(image, width, height, 5)
     filtered_7x7 = apply_box_filter(image, width, height, 7)
-    
-    # Salva as imagens processadas
-    save_jpg("./resultados/filtered_2x2.jpg", filtered_2x2)
-    save_jpg("./resultados/filtered_3x3.jpg", filtered_3x3)
-    save_jpg("./resultados/filtered_5x5.jpg", filtered_5x5)
-    save_jpg("./resultados/filtered_7x7.jpg", filtered_7x7)
     
     # Exibe as imagens
     plot_images(image, filtered_2x2, filtered_3x3, filtered_5x5, filtered_7x7)

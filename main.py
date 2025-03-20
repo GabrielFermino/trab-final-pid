@@ -1,13 +1,13 @@
 import os
-import box
-import cadeia_freeman
-import canny
-import contar_objetos
-import intensidade
-import marr_hildreth
-import otsu
-import watershed
-import Operacoes
+from PIL import Image
+import algoritmos.otsu as otsu
+import algoritmos.canny as canny
+import algoritmos.contar_objetos as contar_objetos
+import algoritmos.intensidade as intensidade
+import algoritmos.marr_hildreth as marr_hildreth
+import algoritmos.watershed as watershed
+import algoritmos.box as box
+import algoritmos.cadeia_freeman as cadeia_freeman
 
 def listar_imagens(diretorio="imagens"):
     """Lista todas as imagens no diretório especificado."""
@@ -41,41 +41,39 @@ def escolher_imagem(imagens):
     return escolha
 
 def main():
-    # Dicionário de métodos disponíveis
     metodos = {
-        "1": ("Box", box.all_box),
-        "2": ("Cadeia Freeman", cadeia_freeman.all_cadeia_freeman),
-        "3": ("Canny", canny.all_canny),
-        "4": ("Contar Objetos", contar_objetos.all_contar_objetos),
-        "5": ("Intensidade", intensidade.all_intensidade),
-        "6": ("Marr-Hildreth", marr_hildreth.all_marr_hildreth),
-        "7": ("Otsu", otsu.all_otsu),
-        "8": ("Watershed", watershed.all_watershed),
+        "1": ("Otsu", otsu.otsu),
+        "2": ("Canny", canny.canny),
+        "3": ("Contar Objetos", contar_objetos.contar_objetos),
+        "4": ("Intensidade", intensidade.intensidade),
+        "5": ("Marr-Hildreth", marr_hildreth.marr_hildreth),
+        "6": ("Watershed", watershed.watershed),
+        "7": ("Box", box.box),
+        "8": ("Cadeia de Freeman", cadeia_freeman.cadeia_freeman)
     }
 
-    # Lista as imagens disponíveis
     imagens = listar_imagens()
     if not imagens:
         print("\nNenhuma imagem encontrada no diretório 'imagens/'.")
         return
     
-    # Escolha da imagem
     escolha_img = escolher_imagem(imagens)
     if not escolha_img.isdigit() or int(escolha_img) not in range(1, len(imagens) + 1):
         print("\nOpção inválida. Tente novamente.")
         return
 
-    # Escolha do método
+    imagem_escolhida = f"{imagens[int(escolha_img) - 1]}"
+    caminho_imagem = os.path.join("imagens", imagem_escolhida)
+    imagem = Image.open(caminho_imagem)
+
     escolha_metodo = escolher_metodo(metodos)
     if escolha_metodo not in metodos:
         print("\nOpção inválida. Tente novamente.")
         return
     
-    # Executa o método escolhido na imagem selecionada
-    imagem_escolhida = f"{imagens[int(escolha_img) - 1]}"
     funcao = metodos[escolha_metodo][1]
     exibir_titulo(f"Executando {metodos[escolha_metodo][0]} na Imagem {imagem_escolhida}")
-    funcao(imagem_escolhida)
+    funcao(imagem)
 
 if __name__ == '__main__':
     while True:
