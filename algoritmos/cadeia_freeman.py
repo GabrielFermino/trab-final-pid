@@ -2,121 +2,109 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
-def cadeia_freeman(imagem):
+def cadeiaFreeman(imagem):
 
-    # Ler e converter para grayscale
-    def binarize_image(imagem, threshold=128):
-        grayscale_image = imagem.convert("L")
-        img_array = np.array(grayscale_image)
-        binary_array = np.where(img_array > threshold, 255, 0)
-        return binary_array.astype(np.uint8)
+    def binarizeImage(imagem, threshold=128):
+        grayscaleImage = imagem.convert("L")
+        imgArray = np.array(grayscaleImage)
+        binaryArray = np.where(imgArray > threshold, 255, 0)
+        return binaryArray.astype(np.uint8)
 
-    def freeman_chain_code(binary_image):
+    def freemanChainCode(binaryImage):
 
-        # Encontra o pixel de fronteira mais pra cima (da esquerda pra direita)
-        def find_start_point(image):
+        def findStartPoint(image):
             for row in range(image.shape[0]):
                 for col in range(image.shape[1]):
                     if image[row, col] == 255:
                         return row, col
             return None
 
-        # Retorna a direção do vizinho
-        def get_neighbor(row, col, direction):
-            if direction == 0:  # Direita
+        def getNeighbor(row, col, direction):
+            if direction == 0: 
                 return row, col + 1
-            elif direction == 1:  # Diagonal direita-baixo
+            elif direction == 1:  
                 return row + 1, col + 1
-            elif direction == 2:  # Baixo
+            elif direction == 2:  
                 return row + 1, col
-            elif direction == 3:  # Diagonal esquerda-baixo
+            elif direction == 3:  
                 return row + 1, col - 1
-            elif direction == 4:  # Esquerda
+            elif direction == 4: 
                 return row, col - 1
-            elif direction == 5:  # Diagonal esquerda-cima
+            elif direction == 5: 
                 return row - 1, col - 1
-            elif direction == 6:  # Cima
+            elif direction == 6:  
                 return row - 1, col
-            elif direction == 7:  # Diagonal direita-cima
+            elif direction == 7:  
                 return row - 1, col + 1
             else:
                 return None
 
-        # Encontra o próximo vizinho na fronteira
-        def find_next_boundary_pixel(image, current_row, current_col, previous_direction):
-            search_order = [(previous_direction + i) % 8 for i in range(1, 9)]
-            for direction in search_order:
-                new_row, new_col = get_neighbor(current_row, current_col, direction)
-
-                # Checa a fronteira
-                if 0 <= new_row < image.shape[0] and 0 <= new_col < image.shape[1]:
-                    if image[new_row, new_col] == 255:  # Pixel encontrado
-                        return new_row, new_col, direction
+        def findNextBoundaryPixel(image, currentRow, currentCol, previousDirection):
+            searchOrder = [(previousDirection + i) % 8 for i in range(1, 9)]
+            for direction in searchOrder:
+                newRow, newCol = getNeighbor(currentRow, currentCol, direction)
+                if 0 <= newRow < image.shape[0] and 0 <= newCol < image.shape[1]:
+                    if image[newRow, newCol] == 255:
+                        return newRow, newCol, direction
             return None
 
-        # Busca algum objeto na imagem
-        start_point = find_start_point(binary_image)
-        if start_point is None:
-            print("Não foi encontrado nenhum objeto na imagem.")
+        startPoint = findStartPoint(binaryImage)
+        if startPoint is None:
+            print("No object found in the image.")
             return None
 
-        chain_code = ""
-        current_row, current_col = start_point
-        previous_direction = 7
-        first_pixel = True
-        visited_pixels = set() # Armazena pixels visitados
-        boundary_pixels = [(current_row, current_col)] # Armazena pixels da fronteira
+        chainCode = ""
+        currentRow, currentCol = startPoint
+        previousDirection = 7
+        firstPixel = True
+        visitedPixels = set()
+        boundaryPixels = [(currentRow, currentCol)]
 
         while True:
-            if first_pixel:
-                next_pixel_info = find_next_boundary_pixel(binary_image, current_row, current_col, previous_direction)
-                first_pixel = False
+            if firstPixel:
+                nextPixelInfo = findNextBoundaryPixel(binaryImage, currentRow, currentCol, previousDirection)
+                firstPixel = False
             else:
-                next_pixel_info = find_next_boundary_pixel(binary_image, current_row, current_col, (previous_direction + 4) % 8)
+                nextPixelInfo = findNextBoundaryPixel(binaryImage, currentRow, currentCol, (previousDirection + 4) % 8)
 
-            if next_pixel_info is None:
+            if nextPixelInfo is None:
                 break
             
-            next_row, next_col, direction = next_pixel_info
+            nextRow, nextCol, direction = nextPixelInfo
 
-            # Verifica se o pixel já foi visitado
-            if (next_row, next_col) in visited_pixels:
-                if (next_row, next_col) == start_point:
-                    break  # Completa a busca
+            if (nextRow, nextCol) in visitedPixels:
+                if (nextRow, nextCol) == startPoint:
+                    break
                 else:
-                    print("Loop detectado. Encerrando a iteração.")
+                    print("Loop detected. Ending iteration.")
                     break
 
-            # Adiciona aos pixels visitados para evitar loops e a fronteira para o plot
-            visited_pixels.add((next_row, next_col))
-            boundary_pixels.append((next_row, next_col))
+            visitedPixels.add((nextRow, nextCol))
+            boundaryPixels.append((nextRow, nextCol))
 
-            chain_code += str(direction)
-            current_row, current_col = next_row, next_col
-            previous_direction = direction
+            chainCode += str(direction)
+            currentRow, currentCol = nextRow, nextCol
+            previousDirection = direction
 
-        return chain_code, boundary_pixels
+        return chainCode, boundaryPixels
 
-    original_image = imagem
-    binary_image = binarize_image(imagem)
+    originalImage = imagem
+    binaryImage = binarizeImage(imagem)
     
-    if binary_image is not None:
-        chain_code, boundary_pixels = freeman_chain_code(binary_image)
-        if chain_code:
-
+    if binaryImage is not None:
+        chainCode, boundaryPixels = freemanChainCode(binaryImage)
+        if chainCode:
 
             plt.figure(figsize=(10, 5))
             plt.subplot(1, 2, 1)
-            plt.imshow(original_image)
-            plt.title("Imagem Grayscale")
-            plt.axis('off')
+            plt.imshow(originalImage)
+            plt.title("Grayscale Image")
 
             plt.subplot(1, 2, 2)
-            plt.imshow(binary_image, cmap='gray')
-            rows, cols = zip(*boundary_pixels)
+            plt.imshow(binaryImage, cmap='gray')
+            rows, cols = zip(*boundaryPixels)
             plt.plot(cols, rows, 'b-', linewidth=2)
-            plt.title("Fronteira Conectada")
-            plt.axis('off')
+            plt.title("Connected Boundary")
             plt.show()
         else:
-            print("Não pode gerar o código da cadeia.")
+            print("Cannot generate chain code.")

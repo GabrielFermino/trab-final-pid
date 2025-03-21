@@ -3,37 +3,32 @@ from PIL import Image
 import algoritmos.otsu as otsu
 import algoritmos.canny as canny
 import algoritmos.contar_objetos as contar_objetos
-import algoritmos.intensidade as intensidade
+import algoritmos.grayscale as grayscale
 import algoritmos.marr_hildreth as marr_hildreth
 import algoritmos.watershed as watershed
 import algoritmos.box as box
 import algoritmos.cadeia_freeman as cadeia_freeman
 
 def listar_imagens(diretorio="imagens"):
-    """Lista todas as imagens no diretório especificado."""
     imagens = [f for f in os.listdir(diretorio) if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff"))]
     return imagens
 
 def exibir_titulo(titulo):
-    """Exibe um título formatado."""
     print("\n" + "=" * 50)
     print(f"{titulo:^50}")
     print("=" * 50)
 
 def exibir_opcoes(opcoes):
-    """Exibe as opções disponíveis."""
     for key, (nome, _) in opcoes.items():
         print(f"{key} - {nome}")
 
 def escolher_metodo(metodos):
-    """Permite ao usuário escolher um método."""
     exibir_titulo("Escolha um Método")
     exibir_opcoes(metodos)
     escolha = input("\nDigite o número do método desejado: ")
     return escolha
 
 def escolher_imagem(imagens):
-    """Permite ao usuário escolher uma imagem."""
     exibir_titulo("Escolha uma Imagem")
     for idx, img in enumerate(imagens, 1):
         print(f"{idx} - {img}")
@@ -44,12 +39,12 @@ def main():
     metodos = {
         "1": ("Otsu", otsu.otsu),
         "2": ("Canny", canny.canny),
-        "3": ("Contar Objetos", contar_objetos.contar_objetos),
-        "4": ("Intensidade", intensidade.intensidade),
-        "5": ("Marr-Hildreth", marr_hildreth.marr_hildreth),
+        "3": ("Contar Objetos", contar_objetos.contarObjetos),
+        "4": ("Intensidade", grayscale.grayscale),
+        "5": ("Marr-Hildreth", marr_hildreth.marrHildreth),
         "6": ("Watershed", watershed.watershed),
         "7": ("Box", box.box),
-        "8": ("Cadeia de Freeman", cadeia_freeman.cadeia_freeman)
+        "8": ("Cadeia de Freeman", cadeia_freeman.cadeiaFreeman)
     }
 
     imagens = listar_imagens()

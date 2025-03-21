@@ -1,76 +1,63 @@
-# Suavização com Gaussiana:A imagem é suavizada com um filtro Gaussiano para reduzir ruídos. 
-# Cálculo da Laplaciana: A segunda derivada da imagem suavizada é calculada, resultando na Laplaciana do Gaussiano (LoG).
-# Identificação de zero-crossings: As bordas são detectadas localizando onde a Laplaciana cruza o valor zero.
-
-# Computacionalmente mais barato.
-
-# O critério de detecção de bordas (zero-crossing) pode falhar em algumas situações.
-# Difícil controlar a espessura das bordas.
-
 import numpy as np
 from PIL import Image
 import scipy.ndimage
 import matplotlib.pyplot as plt
 
-def marr_hildreth(imagem):
+def marrHildreth(image):
 
-    # Suavização com Gaussiana
-    def gaussian_kernel(size, sigma):
+    def gaussianKernel(size, sigma):
         ax = np.linspace(-(size // 2), size // 2, size)
         gauss = np.exp(-0.5 * (ax ** 2) / (sigma ** 2))
         kernel = np.outer(gauss, gauss)
         return kernel / np.sum(kernel)
-    def apply_gaussian_filter(image_array, size=5, sigma=2.0):
-        kernel = gaussian_kernel(size, sigma)
-        return scipy.ndimage.convolve(image_array, kernel, mode='reflect')
 
-    # Cálculo da Laplaciana (LoG)
-    def apply_laplacian(image_array):
-        laplacian_kernel = np.array([[1, 1, 1],
-                                    [1, -8, 1],
-                                    [1, 1, 1]])
-        return scipy.ndimage.convolve(image_array, laplacian_kernel, mode='reflect')
-    
-    # Identificação de zero-crossings
-    def detect_zero_crossings(log_image, threshold):
-        rows, cols = log_image.shape
-        edges = np.zeros_like(log_image, dtype=np.uint8)
-        
+    def applyGaussianFilter(imageArray, size=5, sigma=2.0):
+        kernel = gaussianKernel(size, sigma)
+        return scipy.ndimage.convolve(imageArray, kernel, mode='reflect')
+
+    def applyLaplacian(imageArray):
+        laplacianKernel = np.array([[0, 1, 0],
+                                     [1, -4, 1],
+                                     [0, 1, 0]])
+        return scipy.ndimage.convolve(imageArray, laplacianKernel, mode='reflect')
+
+    def detectZeroCrossings(logImage, threshold):
+        rows, cols = logImage.shape
+        edges = np.zeros_like(logImage, dtype=np.uint8)
         for i in range(1, rows - 1):
             for j in range(1, cols - 1):
-                patch = log_image[i-1:i+2, j-1:j+2]
-                min_val, max_val = patch.min(), patch.max()
-                
-                if min_val < 0 and max_val > 0 and (max_val - min_val) > threshold:
+                patch = logImage[i-1:i+2, j-1:j+2]
+                minVal, maxVal = patch.min(), patch.max()
+                if minVal < 0 and maxVal > 0 and (maxVal - minVal) > threshold:
                     edges[i, j] = 255
-        
         return edges
 
-    def marr_hildreth_edge_detection(image, size=7, sigma=2.5):
+    def marrHildrethEdgeDetection(image, size=7, sigma=2.5):
         image = image.convert("L")
-        image_array = np.array(image, dtype=np.float32)
-        
-        smoothed = apply_gaussian_filter(image_array, size, sigma)
-        log_image = apply_laplacian(smoothed)
-
-        # Normalização para evitar valores extremos
-        log_image = (log_image - log_image.min()) / (log_image.max() - log_image.min())
-        log_image = log_image * 255 - 128
-
-        edges = detect_zero_crossings(log_image, threshold=15.0)
-        
+        imageArray = np.array(image, dtype=np.float32)
+        smoothed = applyGaussianFilter(imageArray, size, sigma)
+        logImage = applyLaplacian(smoothed)
+        logImage = (logImage - logImage.min()) / (logImage.max() - logImage.min())
+        logImage = logImage * 255 - 128
+        edges = detectZeroCrossings(logImage, threshold=15.0)
         result = Image.fromarray(edges)
         
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
         axes[0].imshow(image, cmap="gray")
-        axes[0].set_title("Imagem Grayscale")
-        axes[0].axis("off")
+        axes[0].set_title("Grayscale Image")
 
         axes[1].imshow(result, cmap="gray")
-        axes[1].set_title("Bordas Marr-Hildreth")
-        axes[1].axis("off")
-
+        axes[1].set_title("Marr-Hildreth Edges")
         plt.show()
 
-    image = imagem
-    marr_hildreth_edge_detection(image)
+    marrHildrethEdgeDetection(image)
+
+"""
+O algoritmo Marr-Hildreth baseia-se na detecção de bordas por meio do operador Laplaciano do Gaussiano (LoG). Seu funcionamento segue estas etapas:
+
+Aplica-se um filtro gaussiano para reduzir o ruído
+Por meio do cálculo do Laplaciano obtém a segunda derivada da imagem, evidenciando variações bruscas de intensidade.
+Identifica os locais onde a função Laplaciana cruza o eixo zero, correspondendo a possíveis bordas
+
+Resultado: Bordas mais grossas e possiveis bordas falsas
+"""
